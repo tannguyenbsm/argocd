@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-cm
+  labels:
+    component: app-cm
+data:
+  APP_ENV: testing
+  USER_SERVICE_API_BASE: user.bsm-demo
+  PRODUCT_SERVICE_API_BASE: product.bsm-demo

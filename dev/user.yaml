@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: user
+  name: user
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: user
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: user
+  name: user
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user
+  template:
+    metadata:
+      labels:
+        app: user
+    spec:
+      serviceAccountName: user
+      containers:
+        - image: tannguyenit/bsm-user-service
+          imagePullPolicy: IfNotPresent
+          name: user
+          resources:
+            requests:
+              cpu: 200m
+              memory: 10Mi
+            limits:
+              memory: "512Mi"
+              cpu: 10Mi
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          securityContext:
+            privileged: false
+          readinessProbe:
+            httpGet:
+                path: /health
+                port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+                path: /health
+                port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          envFrom:
+            - configMapRef:
+                name: app-cm
